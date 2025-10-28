@@ -29,7 +29,11 @@ const TABLE =[
     [new Element("Fr", 87, "フランジウム"), new Element("Ra", 88, "ラジウム"), new Element("Ac", 89, "アクチニウム"), new Element("Rf", 104, "ラザホージウム"), new Element("Db", 105), new Element("Sg", 106, "シーボーギウム"), new Element("Bh", 107, "ボーリウム"), new Element("Hs", 108, "ハッシウム"), new Element("Mt", 109, "マイトネリウム"), new Element("Ds", 110, "ダームスタチウム"), new Element("Rg", 111, "レントゲニウム"), new Element("Cn", 112, "コペルニシウム"), new Element("Nh", 113, "ニホニウム"), new Element("Fl", 114, "フレロビウム"), new Element("Mc", 115, "モスコビウム"), new Element("Lv", 116, "リバボリウム"), new Element("Ts", 117, "テネシン"), new Element("Og", 118, "オガネソン")],
 ];
 
+// 時間計測用
 let startTime;
+
+// クリア済みかを表すフラグ
+let isCleared = false;
 
 // 二次元配列の要素をシャッフルする関数
 function Shuffle2DArray(arr){
@@ -82,6 +86,7 @@ function DisplayTimer(){
 }
 
 function LoadGame(){
+    // ローカルストレージにセーブデータがある場合はそれをロード、なかったら初期化
     let saveData = localStorage.getItem('periodicPuzzleSave');
 
     if(saveData){
@@ -90,12 +95,14 @@ function LoadGame(){
         emptyRow = data.emptyRow;
         emptyCol = data.emptyCol;
         startTime = millis() - data.passed;
+        isCleared = data.cleard || false;
     }
     else{
         question = Shuffle2DArray(board);
         emptyRow = 6;
         emptyCol = 17;
         startTime = millis();
+        isCleared = false;
         SaveGame();
     }
 }
@@ -103,7 +110,7 @@ function LoadGame(){
 function SaveGame(){
     let currentPassed = millis() - startTime;
 
-    let saveData = {question: question, emptyRow: emptyRow, emptyCol: emptyCol, passed: currentPassed};
+    let saveData = {question: question, emptyRow: emptyRow, emptyCol: emptyCol, passed: currentPassed, cleard: isCleared};
 
     localStorage.setItem('periodicPuzzleSave', JSON.stringify(saveData));
 }
@@ -113,6 +120,7 @@ function ResetGame(){
     emptyRow = 6;
     emptyCol = 17;
     startTime = millis();
+    isCleared = false;
     SaveGame();
 }
 
@@ -120,8 +128,19 @@ function setup(){
     createCanvas(COLS * tileSize, ROWS * tileSize + 30);
 
     let resetButton = createButton('盤面リセット');
-    resetButton.position(180, 70);
+    resetButton.position(180, 68);
     resetButton.mousePressed(ResetGame);
+    resetButton.style('padding', '5px 10px');
+    resetButton.style('background-color', '#FFFFFF');
+    resetButton.style('border', '2px solid #333');
+    resetButton.style('border-radius', '5px');
+    resetButton.style('cursor', 'pointer');
+    resetButton.mouseOver(() => {
+        resetButton.style('background-color', '#f0f0f0');
+    });
+    resetButton.mouseOut(() => {
+        resetButton.style('background-color', '#FFFFFF');
+    })
 
     for(let i = 0; i < ROWS; i++){
         board[i] = [];
@@ -130,6 +149,19 @@ function setup(){
     }
 
     LoadGame();
+
+    const modalOverlay = select('#modal-overlay');
+    const closeModalButton = select('#modal-close');
+
+    closeModalButton.mousePressed(() => {
+        modalOverlay.style('display', 'none');
+    })
+
+    let visited = localStorage.getItem('periodicPuzzleVisited');
+    if(!visited){
+        modalOverlay.style('display', 'flex');
+        localStorage.setItem('periodicPuzzleVisited', 'true');
+    }
 }
 
 function draw(){
@@ -145,7 +177,7 @@ function draw(){
             let x = j * tileSize;
             let y = i * tileSize + 30;
 
-            if(!(i == emptyRow && j == emptyCol)){
+            if(!(i == emptyRow && j == emptyCol) || isCleared){
                 if(name === board[i][j].name)
                     fill(150, 255, 150);
                 else
@@ -173,7 +205,7 @@ function mousePressed(){
     let clickedCol = floor(mouseX / tileSize);
     let clickedRow = floor((mouseY - 30) / tileSize);
 
-    if(clickedCol < 0 || clickedCol >= COLS || clickedRow < 0 || clickedRow >= ROWS)
+    if(isCleared || clickedCol < 0 || clickedCol >= COLS || clickedRow < 0 || clickedRow >= ROWS)
         return;
 
     let movable = false;
@@ -194,6 +226,8 @@ function mousePressed(){
     if(Check()){
         // 空きマスに欠落していた元素を当てはめる
         question[emptyRow][emptyCol] = board[emptyRow][emptyCol];
-        window.alert("CLEAR!!");
+        isCleared = true;
+        SaveGame();
+        window.alert("CLEAR!!\n\mもう一度遊びたい場合は、「盤面リセット」ボタンを押してください。");
     }
 }

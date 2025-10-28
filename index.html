@@ -1,10 +1,25 @@
 <html>
     <head>
         <title>周期表スライドパズル</title>
+        <link rel = "stylesheet" href = "style.css">
     </head>
     <body>
         <h1>Periodic Table Puzzle</h1>
-        <p>空白は区別してません。</p>
+        <div id = "modal-overlay">
+            <div id = "modal-content">
+                <h2>ようこそ、周期表スライドパズルへ</h2>
+                <p>このゲームのルールについては以下の通りです。</p>
+                <ul>
+                    <li>7×18マスの125ピースパズルです。</li>
+                    <li>周期表では空白の部分もピースとなっていますが、<strong>それぞれは区別されません</strong>。</li>
+                    <li>進行内容はピースを動かすたびに自動で保存されますので、ブラウザを閉じても続きから遊べるはずです。</li>
+                    <li><strong>ローカルストレージを利用しての実装です。</strong>プライベートモードでアクセスしたり、キャッシュやCookieの削除を行ったりした際の挙動は保証できません。</li>
+                    <li>スマートフォンであれば、横向きの画面でプレイするのがちょうど良いかと思います。</li>
+                </ul>
+                <button id = "modal-close">ゲーム開始</button>
+            </div>
+        </div>
+
         <main>
 
         </main>
