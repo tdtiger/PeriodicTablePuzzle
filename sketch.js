@@ -2,11 +2,20 @@
 let board = [];
 let question;
 
+// ランタノイドとか用の配列
+let subBoard = [];
+let subQuestion;
+let isSubActive = false;
+
 // 列数、行数などの設定
 const COLS = 18;
 const ROWS = 7;
+const SUB_COLS = 15;
+const SUB_ROWS = 2;
 let emptyCol = 0;
 let emptyRow = 0;
+let subEmptyCol = 0;
+let subEmptyRow = 0;
 let tileSize = 65;
 
 // 各元素を表すクラス
@@ -29,11 +38,19 @@ const TABLE =[
     [new Element("Fr", 87, "フランジウム"), new Element("Ra", 88, "ラジウム"), new Element("Ac", 89, "アクチニウム"), new Element("Rf", 104, "ラザホージウム"), new Element("Db", 105), new Element("Sg", 106, "シーボーギウム"), new Element("Bh", 107, "ボーリウム"), new Element("Hs", 108, "ハッシウム"), new Element("Mt", 109, "マイトネリウム"), new Element("Ds", 110, "ダームスタチウム"), new Element("Rg", 111, "レントゲニウム"), new Element("Cn", 112, "コペルニシウム"), new Element("Nh", 113, "ニホニウム"), new Element("Fl", 114, "フレロビウム"), new Element("Mc", 115, "モスコビウム"), new Element("Lv", 116, "リバボリウム"), new Element("Ts", 117, "テネシン"), new Element("Og", 118, "オガネソン")],
 ];
 
+const SUB_TABLE = [
+    [new Element("La", 57, "ランタン"), new Element("Ce", 58, "セリウム"), new Element("Pr", 59, "プラセオジム"), new Element("Nd", 60, "ネオジム"), new Element("Pm", 61, "プロメチウム"), new Element("Sm", 62, "サマリウム"), new Element("Eu", 63, "ユウロピウム"), new Element("Gd", 64, "ガドリニウム"), new Element("Tb", 65, "テルビウム"), new Element("Dy", 66, "ジスプロシウム"), new Element("Ho", 67, "ホルミウム"), new Element("Er", 68, "エルビウム"), new Element("Tm", 69, "ツリウム"), new Element("Yb", 70, "イッテルビウム"), new Element("Lu", 71, "ルテチウム")],
+    [new Element("Ac", 89, "アクチニウム"), new Element("Th", 90, "トリウム"), new Element("Pa", 91, "プロトアクチニウム"), new Element("U", 92, "ウラン"), new Element("Np", 93, "ネプツニウム"), new Element("Pu", 94, "プルトニウム"), new Element("Am", 95, "アメリシウム"), new Element("Cm", 96, "キュリーウム"), new Element("Bk", 97, "バークリウム"), new Element("Cf", 98, "カリホルニウム"), new Element("Es", 99, "アインスタイニウム"), new Element("Fm", 100, "フェルミウム"), new Element("Md", 101, "メンデレビウム"), new Element("No", 102, "ノーベリウム"), new Element("Lr", 103, "ローレンシウム")],
+];
+
 // 時間計測用
 let startTime;
 
 // クリア済みかを表すフラグ
 let isCleared = false;
+
+// 描画位置調整
+let subYOffset = 520;
 
 // 二次元配列の要素をシャッフルする関数
 function Shuffle2DArray(arr){
@@ -67,6 +84,28 @@ function Check(){
     return true;
 }
 
+function CheckSub(){
+    for(let i = 0; i < SUB_ROWS; i++){
+        for(let j = 0; j < SUB_COLS; j++){
+            if(i == subEmptyRow && j == subEmptyCol)
+                continue;
+
+            if(subQuestion[i][j].name !== subBoard[i][j].name)
+                return false;
+        }
+    }
+    return true;
+}
+
+function checkSubActive(){
+    if(question[5][2].name === "La" && question[6][2].name === "Ac"){
+        if(!isSubActive)
+            isSubActive = true;
+    }
+    else
+        isSubActive = false;
+}
+
 function DisplayTimer(){
     let passed = millis() - startTime;
 
@@ -94,13 +133,19 @@ function LoadGame(){
         question = data.question;
         emptyRow = data.emptyRow;
         emptyCol = data.emptyCol;
+        subQuestion = data.subQuestion;
+        subEmptyRow = data.subEmptyRow;
+        subEmptyCol = data.subEmptyCol;
         startTime = millis() - data.passed;
         isCleared = data.cleard || false;
     }
     else{
         question = Shuffle2DArray(board);
+        subQuestion = Shuffle2DArray(subBoard);
         emptyRow = 6;
         emptyCol = 17;
+        subEmptyRow = 1;
+        subEmptyCol = 2;
         startTime = millis();
         isCleared = false;
         SaveGame();
@@ -110,22 +155,26 @@ function LoadGame(){
 function SaveGame(){
     let currentPassed = millis() - startTime;
 
-    let saveData = {question: question, emptyRow: emptyRow, emptyCol: emptyCol, passed: currentPassed, cleard: isCleared};
+    let saveData = {question: question, emptyRow: emptyRow, emptyCol: emptyCol, subQuestion: subQuestion, subEmptyRow: subEmptyRow, subEmptyCol: subEmptyCol, passed: currentPassed, cleard: isCleared};
 
     localStorage.setItem('periodicPuzzleSave', JSON.stringify(saveData));
 }
 
 function ResetGame(){
     question = Shuffle2DArray(board);
+    subQuestion = Shuffle2DArray(subBoard);
     emptyRow = 6;
     emptyCol = 17;
+    isSubActive = false;
+    subEmptyRow = 1;
+    subEmptyCol = 2;
     startTime = millis();
     isCleared = false;
     SaveGame();
 }
 
 function setup(){
-    createCanvas(COLS * tileSize, ROWS * tileSize + 30);
+    createCanvas(COLS * tileSize, ROWS * tileSize + 30 + SUB_ROWS * tileSize + 50);
 
     let resetButton = createButton('盤面リセット');
     resetButton.position(180, 68);
@@ -146,6 +195,12 @@ function setup(){
         board[i] = [];
         for(let j = 0; j < COLS; j++)
             board[i][j] = TABLE[i][j];
+    }
+
+    for(let i = 0; i < SUB_ROWS; i++){
+        subBoard[i] = [];
+        for(let j = 0; j < SUB_COLS; j++)
+            subBoard[i][j] = SUB_TABLE[i][j];
     }
 
     LoadGame();
@@ -198,29 +253,92 @@ function draw(){
         }
     }
 
+    if(isSubActive){
+        for(let i = 0; i < SUB_ROWS; i++){
+            for(let j = 0; j < SUB_COLS; j++){
+                let name = subQuestion[i][j].name;
+                let num = subQuestion[i][j].num;
+                let name_ja = subQuestion[i][j].name_ja;
+
+                let x = j * tileSize;
+                let y = i * tileSize + subYOffset;
+
+                if(!(i == subEmptyRow && j == subEmptyCol) || CheckSub()){
+                    if(name === subBoard[i][j].name)
+                        fill(150, 255, 150);
+                    else
+                        fill(255);
+
+                    stroke(0);
+                    rect(x, y, tileSize, tileSize);
+
+                    fill(0);
+                    textAlign(CENTER, CENTER);
+                    textSize(10)
+                    text(num, x + tileSize / 6, y + tileSize / 6);
+                    textSize(25)
+                    text(name, x + tileSize / 2, y + tileSize / 2);
+                    textSize(9)
+                    text(name_ja, x + tileSize / 2, y + tileSize - 10);
+                }
+            }
+        }
+    }
+
     DisplayTimer();
 }
 
 function mousePressed(){
-    let clickedCol = floor(mouseX / tileSize);
-    let clickedRow = floor((mouseY - 30) / tileSize);
+    if(isSubActive && mouseY >= subYOffset){
+        let clickedCol = floor(mouseX / tileSize);
+        let clickedRow = floor((mouseY - subYOffset) / tileSize);
+        
+        if(clickedCol < 0 || clickedCol >= SUB_COLS || clickedRow < 0 || clickedRow >= SUB_ROWS)
+            return;
 
-    if(isCleared || clickedCol < 0 || clickedCol >= COLS || clickedRow < 0 || clickedRow >= ROWS)
-        return;
+        let movable = false;
+        if((clickedCol == subEmptyCol && abs(clickedRow - subEmptyRow) === 1) || (clickedRow === subEmptyRow && abs(clickedCol - subEmptyCol) === 1))
+            movable = true;
 
-    let movable = false;
-    if((clickedCol == emptyCol && abs(clickedRow - emptyRow) === 1) || (clickedRow === emptyRow && abs(clickedCol - emptyCol) === 1))
-        movable = true;
+        if(movable){
+            let tmp = subQuestion[clickedRow][clickedCol];
+            subQuestion[clickedRow][clickedCol] = subQuestion[subEmptyRow][subEmptyCol];
+            subQuestion[subEmptyRow][subEmptyCol] = tmp;
 
-    if(movable){
-        let tmp = question[clickedRow][clickedCol];
-        question[clickedRow][clickedCol] = question[emptyRow][emptyCol];
-        question[emptyRow][emptyCol] = tmp;
+            subEmptyCol = clickedCol;
+            subEmptyRow = clickedRow;
 
-        emptyCol = clickedCol;
-        emptyRow = clickedRow;
+            SaveGame();
+        }
 
-        SaveGame();
+        if(CheckSub()){
+            subQuestion[subEmptyRow][subEmptyCol] = subBoard[subEmptyRow][subEmptyCol];
+            SaveGame();
+            window.alert("サブパズルもクリア!!");
+        }
+    }
+    else{
+        let clickedCol = floor(mouseX / tileSize);
+        let clickedRow = floor((mouseY - 30) / tileSize);
+
+        if(isCleared || clickedCol < 0 || clickedCol >= COLS || clickedRow < 0 || clickedRow >= ROWS)
+            return;
+
+        let movable = false;
+        if((clickedCol == emptyCol && abs(clickedRow - emptyRow) === 1) || (clickedRow === emptyRow && abs(clickedCol - emptyCol) === 1))
+            movable = true;
+
+        if(movable){
+            let tmp = question[clickedRow][clickedCol];
+            question[clickedRow][clickedCol] = question[emptyRow][emptyCol];
+            question[emptyRow][emptyCol] = tmp;
+
+            emptyCol = clickedCol;
+            emptyRow = clickedRow;
+
+            checkSubActive();
+            SaveGame();
+        }
     }
 
     if(Check()){
