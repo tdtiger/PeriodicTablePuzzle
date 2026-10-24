@@ -49,6 +49,7 @@ const SUB_TABLE = [
 
 // 時間計測用
 let startTime;
+let clearedTime = null;
 
 // クリア済みかを表すフラグ
 let isCleared = false;
@@ -160,8 +161,16 @@ function checkSubActive(){
     }
 }
 
+function getPassedTime(){
+    if(clearedTime !== null){
+        return clearedTime;
+    }
+
+    return millis() - startTime;
+}
+
 function DisplayTimer(){
-    let passed = millis() - startTime;
+    let passed = getPassedTime();
 
     // 取得はミリ秒なので補正
     let totalSeconds = floor(passed / 1000);
@@ -188,26 +197,25 @@ function LoadGame(){
         subQuestion = data.subQuestion;
         subEmptyRow = data.subEmptyRow;
         subEmptyCol = data.subEmptyCol;
+        isSubActive = data.isSubActive || false;
+        checkSubActive();
+        slide = null;
         startTime = millis() - data.passed;
         isCleared = data.cleard || false;
+        clearedTime = isCleared ? data.passed : null;
+
     }
     else{
-        question = Shuffle2DArray(board);
-        subQuestion = Shuffle2DArray(subBoard);
-        emptyRow = 6;
-        emptyCol = 17;
-        subEmptyRow = 1;
-        subEmptyCol = 2;
-        startTime = millis();
-        isCleared = false;
-        SaveGame();
+        ResetGame();
+        return;
     }
 }
 
 function SaveGame(){
-    let currentPassed = millis() - startTime;
-
-    let saveData = {question: question, emptyRow: emptyRow, emptyCol: emptyCol, subQuestion: subQuestion, subEmptyRow: subEmptyRow, subEmptyCol: subEmptyCol, passed: currentPassed, cleard: isCleared};
+    let saveData = {
+        question: question, emptyRow: emptyRow, emptyCol: emptyCol, subQuestion: subQuestion, subEmptyRow: subEmptyRow, subEmptyCol: subEmptyCol, 
+        passed: getPassedTime(), cleard: isCleared, isSubActive: isSubActive
+    };
 
     localStorage.setItem('periodicPuzzleSave', JSON.stringify(saveData));
 }
@@ -215,14 +223,14 @@ function SaveGame(){
 function ResetGame(){
     slide  = null;
     question = Shuffle2DArray(board);
-    subQuestion = Shuffle2DArray(subBoard);
+    subQuestion = ShuffleSubPuzzle();
     emptyRow = 6;
     emptyCol = 17;
     isSubActive = false;
-    subEmptyRow = 1;
-    subEmptyCol = 2;
     startTime = millis();
     isCleared = false;
+    clearedTime = null;
+    checkSubActive();
     SaveGame();
 }
 
@@ -381,7 +389,7 @@ function draw(){
                 let x = j * tileSize;
                 let y = i * tileSize + subYOffset;
 
-                if(i == emptyRow && j == emptyCol && !CheckSub()){
+                if(i == subEmptyRow && j == subEmptyCol && !CheckSub()){
                     drawEmpty(x, y);
                 }
                 if(!(i == subEmptyRow && j == subEmptyCol) || CheckSub()){
@@ -430,6 +438,7 @@ function updateSlide(){
     if(Check()){
         question[emptyRow][emptyCol] = board[emptyRow][emptyCol];
         isCleared = true;
+        clearedTime = millis() - startTime;
     }
 
     SaveGame();
@@ -444,7 +453,12 @@ function mousePressed(){
         return;
     }
 
+    // ランタノイド、アクチノイド側の操作
     if(isSubActive && mouseY >= subYOffset){
+        if(CheckSub()){
+            return;
+        }
+        
         let clickedCol = floor(mouseX / tileSize);
         let clickedRow = floor((mouseY - subYOffset) / tileSize);
         
@@ -472,6 +486,7 @@ function mousePressed(){
             window.alert("サブパズルもクリア!!");
         }
     }
+    // メイン側の操作
     else{
         let clickedCol = floor(mouseX / tileSize);
         let clickedRow = floor((mouseY - 30) / tileSize);
