@@ -18,6 +18,10 @@ let subEmptyCol = 0;
 let subEmptyRow = 0;
 let tileSize = 65;
 
+// 移動アニメーション用パラメータ
+let slide = null;
+const SLIDE_DURATION = 150;
+
 // 各元素を表すクラス
 class Element{
     constructor(name, num, name_ja){
@@ -109,6 +113,7 @@ function checkSubActive(){
 function DisplayTimer(){
     let passed = millis() - startTime;
 
+    // 取得はミリ秒なので補正
     let totalSeconds = floor(passed / 1000);
 
     let hours = floor(totalSeconds / 3600);
@@ -161,6 +166,7 @@ function SaveGame(){
 }
 
 function ResetGame(){
+    slide  = null;
     question = Shuffle2DArray(board);
     subQuestion = Shuffle2DArray(subBoard);
     emptyRow = 6;
@@ -235,7 +241,54 @@ function drawEmpty(x, y){
     pop();
 }
 
+// 移動アニメーション描画
+function drawSlide(){
+    if(slide === null){
+        return;
+    }
+
+    let s = slide;
+
+    let progress = constrain((millis() - s.startedAt) / SLIDE_DURATION, 0, 1);
+    let eased = 1 - (1 - progress) * (1 - progress);
+
+    // 移動中における座標計算
+    let x = lerp(s.fromCol * tileSize, s.toCol * tileSize, eased);
+    let y = lerp(s.fromRow * tileSize + 30, s.toRow * tileSize + 30, eased);
+
+    let piece = question[s.fromRow][s.fromCol];
+
+    push();
+
+    if(piece.name === board[s.fromRow][s.fromCol].name){
+        fill(150, 255, 150);
+    }
+    else{
+        fill(255);
+    }
+    stroke(0);
+    strokeWeight(1);
+    rect(x, y, tileSize, tileSize);
+
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    text(piece.num, x + tileSize / 6, y + tileSize / 6);
+    textSize(25);
+    text(piece.name, x + tileSize / 2, y + tileSize / 2);
+    textSize(8);
+    text(piece.name_ja, x + tileSize / 2, y + tileSize - 10);
+
+    pop();
+
+    if(progress >= 1){
+        s.finished = true;
+    }
+}
+
 function draw(){
+    updateSlide();
+
     // 背景の塗りつぶし
     background(220);
 
@@ -247,6 +300,12 @@ function draw(){
 
             let x = j * tileSize;
             let y = i * tileSize + 30;
+
+            // 移動中のマスはこの関数では扱わない
+            if(slide !== null && i === slide.fromRow && j == slide.fromCol){
+                drawEmpty(x, y);
+                continue;
+            }
 
             if(i == emptyRow && j == emptyCol && !isCleared){
                 drawEmpty(x, y);
@@ -267,7 +326,7 @@ function draw(){
                 text(num, x + tileSize / 6, y + tileSize / 6);
                 textSize(25)
                 text(name, x + tileSize / 2, y + tileSize / 2);
-                textSize(9)
+                textSize(8)
                 text(name_ja, x + tileSize / 2, y + tileSize - 10);
             }
         }
@@ -301,17 +360,51 @@ function draw(){
                     text(num, x + tileSize / 6, y + tileSize / 6);
                     textSize(25)
                     text(name, x + tileSize / 2, y + tileSize / 2);
-                    textSize(9)
+                    textSize(8)
                     text(name_ja, x + tileSize / 2, y + tileSize - 10);
                 }
             }
         }
     }
-
+    drawSlide();
     DisplayTimer();
 }
 
+function updateSlide(){
+    if(slide === null || !slide.finished){
+        return;
+    }
+
+    let s = slide;
+
+    let tmp = question[s.fromRow][s.fromCol];
+    question[s.fromRow][s.fromCol] = question[s.toRow][s.toCol];
+    question[s.toRow][s.toCol] = tmp;
+
+    emptyRow = s.fromRow;
+    emptyCol = s.fromCol;
+
+    slide = null;
+
+    checkSubActive();
+
+    if(Check()){
+        question[emptyRow][emptyCol] = board[emptyRow][emptyCol];
+        isCleared = true;
+    }
+
+    SaveGame();
+    if(isCleared){
+        window.alert("CLEAR!!");
+    }
+}
+
 function mousePressed(){
+    // 移動アニメーション中は受付拒否
+    if(slide !== null){
+        return;
+    }
+
     if(isSubActive && mouseY >= subYOffset){
         let clickedCol = floor(mouseX / tileSize);
         let clickedRow = floor((mouseY - subYOffset) / tileSize);
@@ -351,24 +444,12 @@ function mousePressed(){
         if((clickedCol == emptyCol && abs(clickedRow - emptyRow) === 1) || (clickedRow === emptyRow && abs(clickedCol - emptyCol) === 1))
             movable = true;
 
+        // クリックしたマスの移動処理に必要な情報を保存
         if(movable){
-            let tmp = question[clickedRow][clickedCol];
-            question[clickedRow][clickedCol] = question[emptyRow][emptyCol];
-            question[emptyRow][emptyCol] = tmp;
-
-            emptyCol = clickedCol;
-            emptyRow = clickedRow;
-
-            checkSubActive();
-            SaveGame();
+            slide = {
+                fromRow: clickedRow, fromCol: clickedCol, toRow: emptyRow, toCol: emptyCol,
+                startedAt: millis(), finised: false
+            };
         }
-    }
-
-    if(Check()){
-        // 空きマスに欠落していた元素を当てはめる
-        question[emptyRow][emptyCol] = board[emptyRow][emptyCol];
-        isCleared = true;
-        SaveGame();
-        window.alert("CLEAR!!\n\mもう一度遊びたい場合は、「盤面リセット」ボタンを押してください。");
     }
 }
