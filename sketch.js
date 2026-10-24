@@ -296,18 +296,22 @@ function drawSlide(){
 
     let s = slide;
 
+    let puzzle = s.isSub ? subQuestion : question;
+    let answer = s.isSub ? subBoard : board;
+    let yOffset = s.isSub ? subYOffset : 30;
+
     let progress = constrain((millis() - s.startedAt) / SLIDE_DURATION, 0, 1);
     let eased = 1 - (1 - progress) * (1 - progress);
 
     // 移動中における座標計算
     let x = lerp(s.fromCol * tileSize, s.toCol * tileSize, eased);
-    let y = lerp(s.fromRow * tileSize + 30, s.toRow * tileSize + 30, eased);
+    let y = lerp(s.fromRow * tileSize + yOffset, s.toRow * tileSize + yOffset, eased);
 
-    let piece = question[s.fromRow][s.fromCol];
+    let piece = puzzle[s.fromRow][s.fromCol];
 
     push();
 
-    if(piece.name === board[s.fromRow][s.fromCol].name){
+    if(piece.name === answer[s.fromRow][s.fromCol].name){
         fill(180, 240 ,180);
     }
     else{
@@ -349,7 +353,7 @@ function draw(){
             let y = i * tileSize + 30;
 
             // 移動中のマスはこの関数では扱わない
-            if(slide !== null && i === slide.fromRow && j == slide.fromCol){
+            if(slide !== null && !slide.isSub && i === slide.fromRow && j == slide.fromCol){
                 drawEmpty(x, y);
                 continue;
             }
@@ -389,9 +393,15 @@ function draw(){
                 let x = j * tileSize;
                 let y = i * tileSize + subYOffset;
 
+                if(slide !== null && slide.isSub && i === slide.fromRow && j === slide.fromCol){
+                    drawEmpty(x, y);
+                    continue;
+                }
+
                 if(i == subEmptyRow && j == subEmptyCol && !CheckSub()){
                     drawEmpty(x, y);
                 }
+
                 if(!(i == subEmptyRow && j == subEmptyCol) || CheckSub()){
                     if(name === subBoard[i][j].name)
                         fill(180, 240 ,180);
@@ -423,17 +433,34 @@ function updateSlide(){
     }
 
     let s = slide;
+    let puzzle = s.isSub ? subQuestion : question;
 
-    let tmp = question[s.fromRow][s.fromCol];
-    question[s.fromRow][s.fromCol] = question[s.toRow][s.toCol];
-    question[s.toRow][s.toCol] = tmp;
-
-    emptyRow = s.fromRow;
-    emptyCol = s.fromCol;
+    let tmp = puzzle[s.fromRow][s.fromCol];
+    puzzle[s.fromRow][s.fromCol] = puzzle[s.toRow][s.toCol];
+    puzzle[s.toRow][s.toCol] = tmp;
 
     slide = null;
 
-    checkSubActive();
+    if(s.isSub){
+        subEmptyRow = s.fromRow;
+        subEmptyCol = s.fromCol;
+
+        let subCleared = CheckSub();
+        if(subCleared){
+            subQuestion[subEmptyRow][subEmptyCol] = subBoard[subEmptyRow][subEmptyCol];
+        }
+
+        SaveGame();
+
+        if(subCleared){
+            Window.alert("サブパズルクリア！");
+        }
+
+        return;
+    }
+
+    emptyRow = s.fromRow;
+    emptyCol = s.fromCol;
 
     if(Check()){
         question[emptyRow][emptyCol] = board[emptyRow][emptyCol];
@@ -441,7 +468,9 @@ function updateSlide(){
         clearedTime = millis() - startTime;
     }
 
+    checkSubActive();
     SaveGame();
+    
     if(isCleared){
         window.alert("CLEAR!!");
     }
@@ -470,20 +499,10 @@ function mousePressed(){
             movable = true;
 
         if(movable){
-            let tmp = subQuestion[clickedRow][clickedCol];
-            subQuestion[clickedRow][clickedCol] = subQuestion[subEmptyRow][subEmptyCol];
-            subQuestion[subEmptyRow][subEmptyCol] = tmp;
-
-            subEmptyCol = clickedCol;
-            subEmptyRow = clickedRow;
-
-            SaveGame();
-        }
-
-        if(CheckSub()){
-            subQuestion[subEmptyRow][subEmptyCol] = subBoard[subEmptyRow][subEmptyCol];
-            SaveGame();
-            window.alert("サブパズルもクリア!!");
+            slide = {
+                isSub: true, fromRow: clickedRow, fromCol: clickedCol, toRow: subEmptyRow, toCol: subEmptyCol,
+                startedAt: millis(), finished: false
+            };
         }
     }
     // メイン側の操作
@@ -501,8 +520,8 @@ function mousePressed(){
         // クリックしたマスの移動処理に必要な情報を保存
         if(movable){
             slide = {
-                fromRow: clickedRow, fromCol: clickedCol, toRow: emptyRow, toCol: emptyCol,
-                startedAt: millis(), finised: false
+                isSub: false, fromRow: clickedRow, fromCol: clickedCol, toRow: emptyRow, toCol: emptyCol,
+                startedAt: millis(), finished: false
             };
         }
     }
