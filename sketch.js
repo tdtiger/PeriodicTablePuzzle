@@ -75,6 +75,50 @@ function Shuffle2DArray(arr){
     return result;
 }
 
+// ランタノイド・アクチノイド盤面用のシャッフル関数
+function ShuffleSubPuzzle(){
+    subQuestion = subBoard.map(row = row.slice());
+
+    subEmptyRow = Math.floor(Math.random() * SUB_ROWS);
+    subEmptyCol = Math.floor(Math.random() * SUB_COLS);
+
+    // 直前の空きマスの位置を保管する変数
+    let previousRow = -1;
+    let previousCol = -1;
+
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+    // 適当に配置するだけでは詰み盤面が生成されうるので、完成状態から1000回動かす
+    for(let step = 0; step < 1000 || CheckSub(); step++){
+        let candidates = [];
+
+        // 移動可能な方向を抽出
+        for(let [dr, dc] of directions){
+            let row = subEmptyRow + dr;
+            let col = subEmptyCol + dc;
+
+            if(row < 0 || row > SUB_ROWS || col < 0 || col > SUB_COLS){
+                continue;
+            }
+
+            candidates.push({row: row, col: col});
+        }
+
+        // 移動方向をランダムに決定し、空きマスと交換
+        let next = candidates [Math.floor(Math.random() * candidates.length)];
+        let tmp = subQuestion[next.row][next.col];
+        subQuestion[subEmptyRow][subEmptyCol] = subQuestion[subEmptyRow][subEmptyCol];
+        subQuestion[subEmptyRow][subEmptyCol] = tmp;
+
+        previousRow = subEmptyRow;
+        previousCol = subEmptyCol;
+
+        subEmptyRow = next.row;
+        subEmptyCol = next.col;
+    }
+}
+
+// メイン盤面のチェック
 function Check(){
     for(let i = 0; i < ROWS; i++){
         for(let j = 0; j < COLS; j++){
@@ -88,6 +132,7 @@ function Check(){
     return true;
 }
 
+// ランタノイド・アクチノイド盤面のチェック
 function CheckSub(){
     for(let i = 0; i < SUB_ROWS; i++){
         for(let j = 0; j < SUB_COLS; j++){
@@ -101,13 +146,18 @@ function CheckSub(){
     return true;
 }
 
+// ランタノイド・アクチノイド盤面を表示するかのチェック
 function checkSubActive(){
-    if(question[5][2].name === "La" && question[6][2].name === "Ac"){
-        if(!isSubActive)
-            isSubActive = true;
+    if(isSubActive){
+        return;
     }
-    else
-        isSubActive = false;
+
+    let missingName = question[emptyRow][emptyCol].name;
+    let laReady = missingName === "La" || question[5][2].name === "La";
+    let acReady = missingName === "Ac" || question[6][2].name === "Ac";
+    if(laReady && acReady){
+        isSubActive = true;
+    }
 }
 
 function DisplayTimer(){
