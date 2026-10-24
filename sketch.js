@@ -122,11 +122,8 @@ function DisplayTimer(){
 
     let timeString = hours.toString().padStart(2, '0') + ":" + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0');
 
-    fill(0);
-    noStroke();
-    textSize(20);
-    textAlign(LEFT, TOP);
-    text(timeString, 10, 5);
+    // HTML内の時間表示を直接書き換える
+    select('#timer').html(timeString);
 }
 
 function LoadGame(){
@@ -180,22 +177,14 @@ function ResetGame(){
 }
 
 function setup(){
-    createCanvas(COLS * tileSize, ROWS * tileSize + 30 + SUB_ROWS * tileSize + 50);
+    let canvas = createCanvas(COLS * tileSize, ROWS * tileSize + 30 + SUB_ROWS * tileSize + 50);
+    // .parentで、指定した要素の中に入れることができる
+    canvas.parent('board-container');
 
     let resetButton = createButton('盤面リセット');
-    resetButton.position(180, 68);
+    resetButton.parent('game-controls');
+    resetButton.id('reset-button');
     resetButton.mousePressed(ResetGame);
-    resetButton.style('padding', '5px 10px');
-    resetButton.style('background-color', '#FFFFFF');
-    resetButton.style('border', '2px solid #333');
-    resetButton.style('border-radius', '5px');
-    resetButton.style('cursor', 'pointer');
-    resetButton.mouseOver(() => {
-        resetButton.style('background-color', '#f0f0f0');
-    });
-    resetButton.mouseOut(() => {
-        resetButton.style('background-color', '#FFFFFF');
-    })
 
     for(let i = 0; i < ROWS; i++){
         board[i] = [];
@@ -261,7 +250,7 @@ function drawSlide(){
     push();
 
     if(piece.name === board[s.fromRow][s.fromCol].name){
-        fill(150, 255, 150);
+        fill(180, 240 ,180);
     }
     else{
         fill(255);
@@ -313,7 +302,7 @@ function draw(){
 
             if(!(i == emptyRow && j == emptyCol) || isCleared){
                 if(name === board[i][j].name)
-                    fill(150, 255, 150);
+                    fill(180, 240 ,180);
                 else
                     fill(255);
 
@@ -347,7 +336,7 @@ function draw(){
                 }
                 if(!(i == subEmptyRow && j == subEmptyCol) || CheckSub()){
                     if(name === subBoard[i][j].name)
-                        fill(150, 255, 150);
+                        fill(180, 240 ,180);
                     else
                         fill(255);
 

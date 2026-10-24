@@ -2,6 +2,7 @@
     <head>
         <title>周期表スライドパズル</title>
         <link rel = "stylesheet" href = "style.css">
+        <meta name = "viewport" content = "width = device-width, initial-scale = 1">
     </head>
     <body>
         <h1>Periodic Table Puzzle</h1>
@@ -20,8 +21,15 @@
             </div>
         </div>
 
-        <main>
+        <main id = "game">
+            <div id = "game-controls">
+                <p id = "timer-label">
+                    経過時間<span id = "timer">00:00:00</span>
+                </p>
+            </div>
+            <div id = "board-container">
 
+            </div>
         </main>
         <script src = "https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/p5.js"></script>
         <script type = "text/javascript" src = "sketch.js"></script>

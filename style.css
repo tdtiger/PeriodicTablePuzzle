@@ -1,4 +1,4 @@
-#modal-overlay{
+#modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,7 +13,7 @@
     z-index: 100;
 }
 
-#modal-content{
+#modal-content {
     background: #fff;
     padding: 20px 30px;
     border-radius: 8px;
@@ -21,10 +21,77 @@
     font-family: sans-serif;
 }
 
-#modal-close{
+#modal-close {
     display: block;
     margin: 20px auto 0;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+}
+
+body {
+    margin: 0;
+    padding: 24px 16px;
+    background: #f4f6f8;
+    color: #26313d;
+    font-family: sans-serif;
+}
+
+h1 {
+    margin: 0 0 24px;
+    text-align: center;
+    font-size: clamp(24px, 5vw, 36px);
+}
+
+#game {
+    width: 100%;
+    max-width: 1170px;
+    margin: 0 auto;
+}
+
+#game-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+#timer-label {
+    margin: 0;
+    font-size: 14px;
+}
+
+#timer {
+    margin-left: 8px;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+}
+
+#reset-button {
+    padding: 10px 16px;
+    border: 1px solid #b8c2cc;
+    border-radius: 8px;
+    background: #fff;
+    color: #26313d;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#reset-button:hover {
+    background: #e9eef3;
+}
+
+#reset-button:focus-visible {
+    outline: 3px solid #3278be;
+    outline-offset: 3px;
+}
+
+#board-container {
+    overflow-x: auto;
+}
+
+#board-container canvas {
+    display: block;
 }
