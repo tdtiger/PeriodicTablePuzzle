@@ -78,7 +78,7 @@ function Shuffle2DArray(arr){
 
 // ランタノイド・アクチノイド盤面用のシャッフル関数
 function ShuffleSubPuzzle(){
-    subQuestion = subBoard.map(row = row.slice());
+    subQuestion = subBoard.map(row => row.slice());
 
     subEmptyRow = Math.floor(Math.random() * SUB_ROWS);
     subEmptyCol = Math.floor(Math.random() * SUB_COLS);
@@ -98,7 +98,7 @@ function ShuffleSubPuzzle(){
             let row = subEmptyRow + dr;
             let col = subEmptyCol + dc;
 
-            if(row < 0 || row > SUB_ROWS || col < 0 || col > SUB_COLS){
+            if(row < 0 || row >= SUB_ROWS || col < 0 || col >= SUB_COLS){
                 continue;
             }
 
@@ -108,7 +108,7 @@ function ShuffleSubPuzzle(){
         // 移動方向をランダムに決定し、空きマスと交換
         let next = candidates [Math.floor(Math.random() * candidates.length)];
         let tmp = subQuestion[next.row][next.col];
-        subQuestion[subEmptyRow][subEmptyCol] = subQuestion[subEmptyRow][subEmptyCol];
+        subQuestion[next.row][next.col] = subQuestion[subEmptyRow][subEmptyCol];
         subQuestion[subEmptyRow][subEmptyCol] = tmp;
 
         previousRow = subEmptyRow;
@@ -223,7 +223,7 @@ function SaveGame(){
 function ResetGame(){
     slide  = null;
     question = Shuffle2DArray(board);
-    subQuestion = ShuffleSubPuzzle();
+    ShuffleSubPuzzle();
     emptyRow = 6;
     emptyCol = 17;
     isSubActive = false;
@@ -458,7 +458,7 @@ function mousePressed(){
         if(CheckSub()){
             return;
         }
-        
+
         let clickedCol = floor(mouseX / tileSize);
         let clickedRow = floor((mouseY - subYOffset) / tileSize);
         
