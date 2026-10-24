@@ -219,6 +219,22 @@ function setup(){
     }
 }
 
+// 空きマス描画用
+function drawEmpty(x, y){
+    push();
+
+    fill(80, 90, 105);
+    noStroke();
+    rect(x, y, tileSize, tileSize);
+
+    noFill();
+    stroke(230, 235, 245);
+    strokeWeight(2);
+    rect(x + 3, y + 3, tileSize - 6, tileSize - 6);
+
+    pop();
+}
+
 function draw(){
     // 背景の塗りつぶし
     background(220);
@@ -231,6 +247,10 @@ function draw(){
 
             let x = j * tileSize;
             let y = i * tileSize + 30;
+
+            if(i == emptyRow && j == emptyCol && !isCleared){
+                drawEmpty(x, y);
+            }
 
             if(!(i == emptyRow && j == emptyCol) || isCleared){
                 if(name === board[i][j].name)
@@ -263,6 +283,9 @@ function draw(){
                 let x = j * tileSize;
                 let y = i * tileSize + subYOffset;
 
+                if(i == emptyRow && j == emptyCol && !CheckSub()){
+                    drawEmpty(x, y);
+                }
                 if(!(i == subEmptyRow && j == subEmptyCol) || CheckSub()){
                     if(name === subBoard[i][j].name)
                         fill(150, 255, 150);
